@@ -1,0 +1,92 @@
+metricbeat.modules:
+  
+#------------------------------- System -------------------------------
+- module: system
+  metricsets:
+    - cpu             # CPU usage
+    - load            # CPU load averages
+    - memory          # Memory usage
+    - network         # Network IO
+    - process         # Per process metrics
+    - process_summary # Process summary
+    - uptime          # System Uptime
+    - socket_summary  # Socket summary
+    #- core           # Per CPU core usage
+    - diskio         # Disk IO
+    #- filesystem     # File system usage for each mountpoint
+    - fsstat         # File system summary metrics
+    #- raid           # Raid
+    #- socket         # Sockets and connection info (linux only)
+  enabled: true
+  period: 10s
+  processes: ['.*']
+
+  # Configure the metric types that are included by these metricsets.
+  cpu.metrics:  ["percentages"]  # The other available options are normalized_percentages and ticks.
+  core.metrics: ["percentages"]  # The other available option is ticks.
+
+
+#------------------------------- MySQL Module -------------------------------
+- module: mysql
+  enabled: true
+  metricsets: ["status"]
+  period: 5s
+  hosts: ["tcp(serv13d:3306)/"]
+  # hosts: ["root:secret@tcp(127.0.0.1:3306)/"]
+  username: root
+  password: root
+
+#------------------------------- Apache Module -------------------------------
+- module: apache
+  enabled: true
+  metricsets: ["status"]
+  period: 5s
+  hosts: ["http://serv13d"]
+
+#------------------------------- Prometheus Module -------------------------------
+- module: prometheus
+  period: 10s
+  hosts: ["prometheus:9090"]
+  metrics_path: /metrics
+
+#------------------------------- Windows Module -------------------------------
+- module: windows
+  metricsets: ["perfmon"]
+  enabled: true
+  period: 10s
+  perfmon.ignore_non_existent_counters: false
+  perfmon.group_measurements_by_instance: false
+  perfmon.counters:
+  #  - instance_label: processor.name
+  #    instance_name: total
+  #    measurement_label: processor.time.total.pct
+  #    query: '\Processor Information(_Total)\% Processor Time'
+
+- module: windows
+  metricsets: ["service"]
+  enabled: true
+  period: 60s
+
+#-------------------------- Elasticsearch output ------------------------------
+output.elasticsearch:
+  username: "metricbeat_anonymous_user"
+  #password: ""
+  hosts: ["elasticsearch:9200"]
+
+setup.kibana:
+  host: "http://kibana:5601"
+
+#============================== Dashboards =====================================
+# These settings control loading the sample dashboards to the Kibana index. Loading
+# the dashboards is disabled by default and can be enabled either by setting the
+# options here, or by using the `-setup` CLI flag.
+setup.dashboards.enabled: true
+
+logging.level: warning
+logging.to_files: true
+logging.to_syslog: false
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat.log
+  keepfiles: 2
+  permissions: 0644
